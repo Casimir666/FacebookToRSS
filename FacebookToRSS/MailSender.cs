@@ -8,12 +8,24 @@ namespace FacebookToRSS
 {
     class MailSender
     {
-        public async Task SendAsync(string subject, string html, CancellationToken cancellationToken = default)
+        public MailSender()
+        {
+            Logger.LogMessage("Mail client configured for:");
+            Logger.LogMessage($"  - Server {Configuration.Default.SmtpServer} on port {Configuration.Default.SmtpPort}");
+            if (!string.IsNullOrEmpty(Configuration.Default.ProxyHost))
+            {
+                Logger.LogMessage($"  - Server {Configuration.Default.ProxyHost} on port {Configuration.Default.ProxyPort}");
+            }
+            Logger.LogMessage($"  - Sender {Configuration.Default.SenderAddress}");
+            Logger.LogMessage($"  - Recipients {Configuration.Default.Recipients}");
+        }
+
+        public async Task SendAsync(string subject, string recipients, string html, CancellationToken cancellationToken = default)
         {
             var message = new MimeMessage();
             var bodyBuilder = new BodyBuilder();
             message.From.Add(new MailboxAddress(Configuration.Default.SenderAddress));
-            foreach (var recipient in Configuration.Default.Recipients.Split(";"))
+            foreach (var recipient in recipients.Split(";"))
             {
                 message.To.Add(new MailboxAddress(recipient));
             }

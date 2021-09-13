@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,19 +14,21 @@ namespace FacebookToRSS
             var sender = new MailSender();
 
             Logger.LogMessage("Facebook daemon is running, press Ctrl+C to quit...");
+            var web = new HtmlWeb();
+            Logger.LogMessage($"Web browser user agent: {web.UserAgent}");
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    Logger.LogMessage("Loading Facebook messages...");
-                    var web = new HtmlWeb();
                     HtmlDocument document;
-                    var lastDateUpdated = false;
                     var previousLastMessageDate = Configuration.Default?.LastFacebookMessageDate ?? DateTime.MinValue;
 
+                    var postUrl = $"https://www.facebook.com/pg/{Configuration.Default.FacebookUser}/posts";
+                    Logger.LogMessage($"Loading Facebook messages: {postUrl}");
                     try
                     {
-                        document = await web.LoadFromWebAsync($"https://www.facebook.com/pg/{Configuration.Default.FacebookUser}/posts", cancellationToken);
+                        document = await web.LoadFromWebAsync(postUrl, cancellationToken);
+                        await File.WriteAllTextAsync(Path.GetFullPath("facebook.html"), document.DocumentNode.OuterHtml, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -53,27 +56,24 @@ namespace FacebookToRSS
                             !DateTime.TryParseExact(postDate, "d MMMM", new System.Globalization.CultureInfo("fr-FR"), System.Globalization.DateTimeStyles.None, out postDateTime))
                             throw new FacebookException($"Date format invalid for post: {postDate}");
 
-                        if (postDateTime < previousLastMessageDate)
+                        if (postDateTime <= previousLastMessageDate)
                             continue;
 
                         try
                         {
-                            await sender.SendAsync($"Message Facebook du {postDate}",  $"<html><body>{html}</body></html>", cancellationToken);
-                            await Task.Delay(4000);
+#if !DEBUG
+                            await sender.SendAsync($"Message Facebook du {postDate}", Configuration.Default.Recipients, $"<html><body>{html}</body></html>", cancellationToken);
+                            Logger.LogMessage($"Message from {postDate} sent.");
+#endif
+                            await Task.Delay(4000, cancellationToken);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Cannot send mail: {ex.Message}");
+                            Logger.LogMessage($"Cannot send mail: {ex.Message}");
                         }
 
-                        Logger.LogMessage($"Message from {postDate} sent.");
-
-                        if (!lastDateUpdated)
-                        {
-                            Configuration.Default.LastFacebookMessageDate = postDateTime;
-                            Configuration.Default.Save();
-                            lastDateUpdated = true;
-                        }
+                        Configuration.Default.LastFacebookMessageDate = postDateTime;
+                        await Configuration.SaveAsync(cancellationToken);
                     }
 
                     Logger.LogMessage($"Done, waiting for {Configuration.Default.RefreshDelay}.");
@@ -91,7 +91,7 @@ namespace FacebookToRSS
 
                 try
                 {
-                    await sender.SendAsync($"Erreur inattendue!", $"Le script de surveillance Facebook s'est arrêté avec l'erreur suivante : {ex.Message}\n{ex.StackTrace}", cancellationToken);
+                    await sender.SendAsync($"Erreur inattendue!", Configuration.Default?.Recipients.Split(";").First(), $"Le script de surveillance Facebook s'est arrêté avec l'erreur suivante : {ex.Message}\n{ex.StackTrace}", cancellationToken);
                 }
                 catch (Exception ex2)
                 {

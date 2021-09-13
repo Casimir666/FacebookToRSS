@@ -8,22 +8,8 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.36" />
     <PackageReference Include="MailKit" Version="2.15.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Configuration.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Configuration.settings</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Configuration.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Configuration.Designer.cs</LastGenOutput>
-    </None>
   </ItemGroup>
 
 </Project>

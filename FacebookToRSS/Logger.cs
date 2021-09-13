@@ -12,7 +12,8 @@ namespace FacebookToRSS
         {
             if (_path == null)
             {
-                _path = GetExePath() + "\\FacebookToRSS.txt";
+                _path = Path.GetFullPath("log.txt");
+                Console.WriteLine($"Create log file: {_path}");
             }
 
             var fullMessage = timestamp
@@ -21,12 +22,6 @@ namespace FacebookToRSS
 
             File.AppendAllText(_path, fullMessage);
             Console.Write(fullMessage);
-        }
-
-        private static string GetExePath()
-        {
-            string fullPath = Assembly.GetEntryAssembly().Location;
-            return fullPath.Substring(0, fullPath.LastIndexOf('\\'));
         }
     }
 }

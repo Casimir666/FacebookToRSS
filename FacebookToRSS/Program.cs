@@ -11,11 +11,18 @@ namespace FacebookToRSS
 
         static async Task Main(string[] args)
         {
-            var daemon = new FacebookDaemon();
-            RegisterHandlers();
+            if (Configuration.Default == null)
+            {
+                Logger.LogMessage("WARNING: configuration file not found!");
+            }
+            else
+            {
+                var daemon = new FacebookDaemon();
+                RegisterHandlers();
 
-            await daemon.RunAsync(Tcs.Token);
-            Console.WriteLine("Bridge is stopped...");
+                await daemon.RunAsync(Tcs.Token);
+            }
+            Logger.LogMessage("Bridge is stopped...");
         }
 
         private static void RegisterHandlers()

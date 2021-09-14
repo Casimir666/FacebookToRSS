@@ -21,6 +21,19 @@ namespace FacebookToRSS
         public TimeSpan RefreshDelay { get; set; }
         public string FacebookUser { get; set; }
 
+        /// <summary>
+        /// XPath for the Html elements that contains all posts
+        /// </summary>
+        public string PostsContainerXPath { get; set; }
+        /// <summary>
+        /// XPath to extract timestamp from a single post
+        /// </summary>
+        public string TimestampXPath { get; set; }
+        /// <summary>
+        /// Element ignored in post container element
+        /// </summary>
+        public string IgnoredClassname { get; set; }
+
         public static Configuration Default;
 
         static Configuration()

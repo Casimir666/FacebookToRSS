@@ -54,14 +54,7 @@ namespace FacebookToRSS
                         if (postDate == null)
                             throw new FacebookException("Fail to extract post date (class timestampContent not found)");
 
-                        if (!DateTime.TryParseExact(postDate, "d MMMM, HH:mm", _cultureInfo, DateTimeStyles.None, out DateTime postDateTime) &&
-                            !DateTime.TryParseExact(postDate, "d MMMM", _cultureInfo, DateTimeStyles.None, out postDateTime))
-                        {
-                            if (!TimeSpan.TryParseExact(postDate, "%h\\ \\h", _cultureInfo, out TimeSpan postDuration) &&
-                                !TimeSpan.TryParseExact(postDate, "%m\\ \\m", _cultureInfo, out postDuration))
-                                throw new FacebookException($"Date format invalid for post: {postDate}");
-                            postDateTime = DateTime.Now - postDuration;
-                        }
+                        var postDateTime = Utilities.ParseFacebookDate(postDate, _cultureInfo, DateTime.Now);
 
                         if (postDateTime <= previousLastMessageDate)
                             continue;

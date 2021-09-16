@@ -14,12 +14,12 @@ namespace FacebookToRSS
             }
 
             if (TimeSpan.TryParseExact(facebookDate, "%h\\ \\h", cultureInfo, out TimeSpan postDuration))
-                return now - postDuration + TimeSpan.FromHours(1);  // Ugly hack to prevent multiple mail (minutes are missing...)
+                return new DateTime (now.Year, now.Month, now.Day, now.Hour, 0, 0) - postDuration;  // Hack : round to lower hour
 
             if (TimeSpan.TryParseExact(facebookDate, "%m\\ \\m", cultureInfo, out postDuration) ||
                 TimeSpan.TryParseExact(facebookDate, "%m\\ \\m\\i\\n", cultureInfo, out postDuration))
             {
-                return now - postDuration + TimeSpan.FromMinutes(1); // Ugly hack to prevent multiple mail (seconds are missing...)
+                return new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0) - postDuration + TimeSpan.FromMinutes(1); // Hack : round to lower minute
             }
 
             if (TimeSpan.TryParseExact(facebookDate, "\\H\\i\\e\\r\\,\\ \\à\\ %h\\:%m", cultureInfo, out postDuration))

@@ -18,6 +18,7 @@ namespace FacebookToRSS
         public int SmtpPort { get; set; }
         public string SenderPassword { get; set; }
         public DateTime LastFacebookMessageDate { get; set; }
+        public string LastFacebookMessageSha256 { get; set; }
         public TimeSpan RefreshDelay { get; set; }
         public string FacebookUser { get; set; }
 

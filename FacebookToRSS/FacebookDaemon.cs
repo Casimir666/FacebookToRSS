@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -50,13 +52,17 @@ namespace FacebookToRSS
                             continue;
 
                         var postDate = post.SelectSingleNode(Configuration.Default.TimestampXPath)?.InnerText?.Trim();
+                        var cleanedPost = Clean(post).OuterHtml;
+                        var postSha256 = cleanedPost != null ? BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(cleanedPost))).Replace("-", "") : "";
+
+                        Logger.LogMessage($"{postDate} {postSha256}");
 
                         if (postDate == null)
                             throw new FacebookException("Fail to extract post date (class timestampContent not found)");
 
                         var postDateTime = Utilities.ParseFacebookDate(postDate, _cultureInfo, DateTime.Now);
 
-                        if (postDateTime <= previousLastMessageDate)
+                        if (postDateTime <= previousLastMessageDate || postSha256 == Configuration.Default.LastFacebookMessageSha256)
                             continue;
 
                         try
@@ -74,6 +80,7 @@ namespace FacebookToRSS
                         }
 
                         Configuration.Default.LastFacebookMessageDate = postDateTime;
+                        Configuration.Default.LastFacebookMessageSha256 = postSha256;
                         await Configuration.SaveAsync(cancellationToken);
                     }
 
@@ -99,6 +106,41 @@ namespace FacebookToRSS
                     Logger.LogMessage($"Fail to send crash report mail: {ex2.Message}");
                 }
             }
+        }
+
+        private HtmlNode Clean(HtmlNode clone)
+        {
+            var res = clone.Clone();
+
+            void DoClean(HtmlNode node)
+            {
+                foreach (var nodeAttribute in node.Attributes.ToList())
+                {
+                    switch (nodeAttribute.Name)
+                    {
+                        case "href":
+                        case "data-xt":
+                        case "aria-describedby":
+                        case "id":
+                        case "value":
+                        case "ajaxify":
+                        case "onclick":
+                            node.Attributes.Remove(nodeAttribute);
+                            break;
+                        default:
+                            //Console.WriteLine($"{nodeAttribute.Name} : {nodeAttribute.Value}");
+                            break;
+                    }
+                }
+
+                foreach (var childNode in node.ChildNodes)
+                {
+                    DoClean(childNode);
+                }
+            }
+
+            DoClean(res);
+            return res;
         }
     }
 }
